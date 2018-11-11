@@ -44,6 +44,9 @@ public class ClientHandler implements Runnable {
                 }
                 switch (msg) {
                     case "Start.":
+                        sendMsg(controller.startGame());
+                        break;
+                    case "Test.":
                         sendBigData();
                         sendMsg(controller.startGame());
                         break;
@@ -51,14 +54,13 @@ public class ClientHandler implements Runnable {
                         sendMsg(controller.restart());
                         break;
                     case "Disconnect.":
-                        sendMsg("Disconnect");
                         disconnectClient();
                         break;
                     default:
                         sendMsg(controller.gameEntry(msg));
                         break;
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 System.err.println("Message not recognized.");
             }
         }

@@ -7,6 +7,10 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 
+/*
+* Connector handler to the server.
+* */
+
 public class ServerConnector implements Runnable {
     private static final int TIMEOUT_HALF_HOUR = 1800000;
     private static final int TIMEOUT_HALF_MINUTE = 30000;
@@ -29,8 +33,9 @@ public class ServerConnector implements Runnable {
         new Thread(this).start();
     }
 
+
     public void disconnect() throws IOException {
-        sendMsg("Disconnect");
+        sendMsg("Disconnect.");
         socket.close();
         socket = null;
         connected = false;
@@ -40,6 +45,8 @@ public class ServerConnector implements Runnable {
         toServer.println(msg);
     }
 
+    // check size of the message
+    // TODO: maybe refactor and put into "Common" package?
     private int checkSize(String msg) throws IOException {
         ByteArrayOutputStream byteOutputStream = new ByteArrayOutputStream ( ) ;
         ObjectOutputStream objectOutputStream = new ObjectOutputStream ( byteOutputStream ) ;
@@ -49,35 +56,52 @@ public class ServerConnector implements Runnable {
         return byteOutputStream.toByteArray().length;
     }
 
+
+    // put together and print out all messages in the buffer and remove them from buffer
+    private void emptyBuffer() {
+        StringBuilder sb = new StringBuilder();
+        while (!messageBuffer.isEmpty()) {
+            System.out.println("Combining..." + messageBuffer.get(0));
+            String msgFromBuffer = messageBuffer.get(0);
+            sb.append(msgFromBuffer);
+            messageBuffer.remove(0);
+        }
+
+        if (!sb.toString().equals("")) {
+            String newMsg = sb.toString();
+            String[] newSplit = newMsg.split("##");
+            ui.showOutput(newSplit[1]);
+        }
+    }
+
+
     @Override
     public void run() {
         try {
             while(true) {
                 String msgFromServer = fromServer.readLine();
-                StringBuilder sb = new StringBuilder();
 
+                // if a message has prepended size, split and check if size of the message is the same.
                 if (msgFromServer.contains("##")) {
                     String[] split = msgFromServer.split("##");
                     int header = Integer.parseInt(split[0]);
                     String msg = split[1];
-                    System.out.println("HEADER: " + header + " Size: " + msg.getBytes().length);
                     if (header - checkSize(msg) == 0 && header <= 65535) {
+                        // if there is something in the buffer
+                        if (!messageBuffer.isEmpty()) {
+                            // empty buffer
+                            emptyBuffer();
+                        }
+                        // print the new message
                         ui.showOutput(msg);
                     } else {
+                        // if its big, save it to buffer
                         System.out.println("Message too big, combining.");
                         messageBuffer.add(msgFromServer);
                     }
-                }
-                while (!messageBuffer.isEmpty()) {
-                    System.out.println("Combining...");
-                    String msgFromBuffer = messageBuffer.get(0);
-                    sb.append(msgFromBuffer);
-                    messageBuffer.remove(0);
-                }
-                if (!sb.toString().equals("")) {
-                    String newMsg = sb.toString();
-                    String[] newSplit = newMsg.split("##");
-                    ui.showOutput(newSplit[1]);
+                } else {
+                    // if it doesn't, its a part of another message - save that too
+                    messageBuffer.add(msgFromServer);
                 }
             }
         } catch (Exception e) {

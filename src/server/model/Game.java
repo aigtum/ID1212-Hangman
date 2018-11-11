@@ -24,7 +24,7 @@ public class Game {
         wonGame = false;
 
         switch (condition) {
-            case "startGame":
+            case "newGame":
                 message = NEW_GAME;
                 break;
             case "win":

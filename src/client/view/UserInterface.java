@@ -5,6 +5,10 @@ import client.controller.Controller;
 import java.io.IOException;
 import java.util.Scanner;
 
+/*
+* User interface for startup and game.
+* */
+
 public class UserInterface implements Runnable {
     private final String PROMPT = "> ";
     private final Scanner console = new Scanner(System.in);
@@ -12,6 +16,8 @@ public class UserInterface implements Runnable {
     private Controller controller;
 
 
+    // Start UI and receive commands from user.
+    // The game is not stared before client connects to the server and starts the game.
     public void start() {
         System.out.println("Welcome to hangman. Type in 'Connect.' to connect to the sever. Type 'Disconnect.' to disconnect.");
         System.out.println("Enter 'ConnectAddr.' to connect to a specific IP.");
@@ -24,11 +30,13 @@ public class UserInterface implements Runnable {
         new Thread(this).start();
     }
 
+
     private String getUserInput() {
         String input = console.nextLine();
         return input;
     }
 
+    // get user input and act accordingly
     @Override
     public void run() {
         while(true){
@@ -45,6 +53,7 @@ public class UserInterface implements Runnable {
                         if (!ip.equals("")) {
                             controller.connectAdr(ip);
                         } else {
+                            // debugging addition
                             controller.connectAdr("192.168.0.11");
                         }
                         break;
@@ -53,6 +62,7 @@ public class UserInterface implements Runnable {
                         controller.disconnect();
                         break;
                     default:
+                        // if the command is not one of the three above, it's game related
                         controller.sendMsg(userMsg);
                         break;
                 }
@@ -62,6 +72,8 @@ public class UserInterface implements Runnable {
         }
     }
 
+
+    // game state message from the the server transformed to user readable information
     private String messageSwitch(String msg) {
         String msgFromServer;
         switch (msg){
@@ -78,7 +90,7 @@ public class UserInterface implements Runnable {
                 msgFromServer = "You restated the game.";
                 break;
             case "d":
-                msgFromServer = "Disconnect";
+                msgFromServer = "Disconnected.";
                 break;
             case "cg":
                 msgFromServer = "Correct Guess";
@@ -90,12 +102,13 @@ public class UserInterface implements Runnable {
                 msgFromServer = "Input not recognized. Try again.";
                 break;
             default:
+                //msgFromServer = msg;
                 msgFromServer = "Unknown Message";
         }
         return msgFromServer;
     }
 
-
+    // Format and print the data received from the server
     public void showOutput(String fromServer){
         if (fromServer.equals("Disconnect")) {
             System.out.println("Disconnected from server");
@@ -104,7 +117,7 @@ public class UserInterface implements Runnable {
             System.out.println("_______________________________________________");
             System.out.println(">>> " + messageSwitch(dataToShow[3]) + " <<<");
             System.out.println("Score: " + dataToShow[0] + "     Attempts: " + dataToShow[1]);
-            System.out.println("Word:   " + dataToShow[2].substring(0,3));
+            System.out.println("Word:   " + dataToShow[2]);
             System.out.println("_______________________________________________");
             System.out.print(PROMPT);
         }
